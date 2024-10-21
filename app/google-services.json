@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1049344950682",
+    "project_id": "player-finder-app-ff15e",
+    "storage_bucket": "player-finder-app-ff15e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1049344950682:android:1dd68ebab4ad848fc4ba23",
+        "android_client_info": {
+          "package_name": "com.example.playerfinderapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyACv7PkCdfTxcsus25-Gf67yb6W9mD94CU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

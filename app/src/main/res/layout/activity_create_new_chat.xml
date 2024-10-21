@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#ADD8E6">
+
+
+    <!-- Return button (top-left) -->
+    <ImageButton
+        android:id="@+id/return_button"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="30dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="Return"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_return"
+        tools:ignore="TouchTargetSizeCheck" />
+
+    <!-- Search button for username (search icon + input) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="8dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginTop="8dp">
+
+
+        <!-- Search icon -->
+        <ImageView
+            android:id="@+id/search_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_search_icon"
+            android:contentDescription="Search Icon" />
+
+        <!-- Search bar for username -->
+        <EditText
+            android:id="@+id/search_username"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:clickable="false"
+            android:focusable="false"
+            android:hint="Search Username"
+            android:inputType="text"
+            android:minHeight="48dp"
+            android:padding="10dp" />
+    </LinearLayout>
+
+    <!-- Friends list for selecting a user to chat -->
+    <ListView
+        android:id="@+id/friends_list_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="@android:color/darker_gray"
+        android:dividerHeight="1dp"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- Button to create group chat -->
+    <Button
+        android:id="@+id/create_group_button"
+        android:layout_width="160dp"
+        android:layout_height="50dp"
+        android:text="Create Group"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/dark_blue"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="10dp"
+        android:layout_gravity="center"/>
+</LinearLayout>
+
