@@ -1,3 +1,8 @@
+plugins {
+    id("com.android.application")
+    id("com.google.gms.google-services")
+}
+
 android {
     namespace = "com.example.playerfinderapp"
     compileSdk = 34
@@ -21,10 +26,12 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+
     buildFeatures {
         viewBinding = true
     }
@@ -38,23 +45,29 @@ dependencies {
     implementation(libs.constraintlayout)
 
     // Firebase dependencies
+    implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.database)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.firestore)
-    implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
 
     // RecyclerView dependency for list views
     implementation(libs.recyclerview)
-    implementation(libs.recyclerview)
 
     // Picasso for image loading
     implementation(libs.picasso)
-    implementation(libs.mediation.test.suite)
+
+    // DataStore dependency
     implementation(libs.datastore.core.android)
+
+    // Lifecycle dependencies
     implementation(libs.lifecycle.livedata.ktx)
     implementation(libs.lifecycle.viewmodel.ktx)
+    implementation (libs.lifecycle.runtime.ktx)
+    implementation (libs.lifecycle.extensions)
+
+    // Navigation dependencies
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
 
@@ -63,13 +76,9 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
-    implementation ("com.github.bumptech.glide:glide:4.15.1")
-    annotationProcessor ("com.github.bumptech.glide:compiler:4.15.1")
+    // Glide for image loading
+    implementation(libs.glide)
+    annotationProcessor(libs.compiler)
+
 
 }
-
-plugins {
-    alias(libs.plugins.android.application)
-    id("com.google.gms.google-services") version "4.4.2" apply false
-}
-
