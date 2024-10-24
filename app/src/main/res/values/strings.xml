@@ -6,4 +6,7 @@
     <string name="title_notifications">Notifications</string>
     <string name="friend_profile_picture">friend profile picture</string>
     <string name="friend_name">Friend Name</string>
+    <string name="remove_friend_description">Remove friend</string>
+    <string name="add_friend_description">Add friend</string>
+    <string name="profile_picture_description">Profile picture</string>
 </resources>

@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.playerfinderapp.R;
 import com.example.playerfinderapp.adapters.UserAdapter;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -21,6 +22,7 @@ import java.util.Map;
 public class GameUsersActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
+    private FirebaseAuth auth;
     private RecyclerView usersRecyclerView;
     private UserAdapter userAdapter;
     private List<Map<String, Object>> userList;
@@ -33,6 +35,7 @@ public class GameUsersActivity extends AppCompatActivity {
 
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
 
         // Get game name from intent
         gameName = getIntent().getStringExtra("GAME_NAME");
@@ -64,18 +67,27 @@ public class GameUsersActivity extends AppCompatActivity {
     }
 
     private void loadUsersForGame() {
+        // Get current user ID
+        String currentUserId = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : "";
+
         db.collection("users")
                 .whereArrayContains("favoriteGames", gameName)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     userList.clear();
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                        Map<String, Object> userData = document.getData();
-                        userList.add(userData);
+                        // Get the user ID from the document
+                        String userId = document.getString("uid");
+
+                        // Only add user if it's not the current user
+                        if (!currentUserId.equals(userId)) {
+                            Map<String, Object> userData = document.getData();
+                            userList.add(userData);
+                        }
                     }
 
                     if (userList.isEmpty()) {
-                        Toast.makeText(this, "No users found for " + gameName, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "No other users found for " + gameName, Toast.LENGTH_SHORT).show();
                     }
 
                     userAdapter.notifyDataSetChanged();

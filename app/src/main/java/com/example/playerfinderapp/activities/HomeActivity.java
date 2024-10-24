@@ -64,8 +64,8 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 // Navigate to Profile Activity
-                //Intent profileIntent = new Intent(HomeActivity.this, ProfileActivity.class);
-                //startActivity(profileIntent);
+                Intent profileIntent = new Intent(HomeActivity.this, ProfileActivity.class);
+                startActivity(profileIntent);
             }
         });
 

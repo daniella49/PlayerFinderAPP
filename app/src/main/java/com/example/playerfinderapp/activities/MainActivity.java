@@ -28,13 +28,21 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
-        // Initialize FirebaseAuth instance
+        // Initialize FirebaseAuth and Firestore instance
         auth = FirebaseAuth.getInstance();
-
-        // Initialize Firestore instance
         db = FirebaseFirestore.getInstance();
+
+        // Check if user is already logged in
+        if (auth.getCurrentUser() != null) {
+            // User is already logged in, go directly to HomeActivity
+            startActivity(new Intent(this, HomeActivity.class));
+            finish();
+            return;
+        }
+
+        // If no user is logged in, show the login screen
+        setContentView(R.layout.activity_main);
 
         // Bind UI elements
         emailEditText = findViewById(R.id.emailEditText);
