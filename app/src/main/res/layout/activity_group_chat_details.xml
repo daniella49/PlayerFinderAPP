@@ -25,7 +25,8 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp">
 
         <TextView
             android:id="@+id/group_name"
@@ -54,7 +55,8 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp">
 
         <ImageView
             android:id="@+id/group_profile_picture"
@@ -63,7 +65,8 @@
             android:src="@drawable/ic_profile_picture_default"
             android:background="@drawable/rounded_image_view"
             android:contentDescription="Group profile picture"
-            android:scaleType="centerCrop" />
+            android:scaleType="centerCrop"
+            android:layout_marginLeft="10dp"/>
 
         <ImageButton
             android:id="@+id/edit_picture_button"
@@ -82,7 +85,8 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp">
 
         <EditText
             android:id="@+id/group_bio"
@@ -105,43 +109,49 @@
             tools:ignore="TouchTargetSizeCheck" />
     </LinearLayout>
 
-    <!-- Edit Buttons -->
+    <!-- Search View and Add Friends Button -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center"
         android:layout_marginTop="10dp">
 
-        <Button
-            android:id="@+id/add_member_button"
-            android:layout_width="wrap_content"
+        <SearchView
+            android:id="@+id/member_search_view"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_marginRight="30dp"
-            android:minWidth="48dp"
-            android:text="Add Member"
-            android:backgroundTint="@color/dark_blue"
+            android:layout_weight="1"
+            android:layout_marginTop="15dp"
+            android:layout_marginEnd="8dp"
+            android:queryHint="Search Members"
+            android:iconifiedByDefault="false" />
+
+        <ImageButton
+            android:id="@+id/add_friends_button"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:layout_marginTop="15dp"
+            android:background="@drawable/ic_add_group_friends"
+            android:contentDescription="Add Friends"
             tools:ignore="TouchTargetSizeCheck" />
     </LinearLayout>
-
-    <!-- Search View for Members -->
-    <SearchView
-        android:id="@+id/member_search_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:layout_marginRight="40dp"
-        android:queryHint="Search Members"
-        android:iconifiedByDefault="false" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/members_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="50dp"/>
 
+    <Button
+        android:id="@+id/leave_group_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/dark_blue"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="10dp"
+        android:layout_gravity="center"
+        android:text="Leave group" />
 
 </LinearLayout>
-
-

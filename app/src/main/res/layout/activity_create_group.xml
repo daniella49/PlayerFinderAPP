@@ -27,7 +27,7 @@
         android:hint="Enter Group Name"
         android:minHeight="48dp"
         android:padding="10dp"
-        android:layout_marginTop="40dp"/>
+        android:layout_marginTop="20dp"/>
 
     <!-- Group Image Button -->
     <ImageButton
@@ -38,7 +38,34 @@
         android:background="@drawable/rounded_image_view"
         android:contentDescription="Select Group Image"
         android:layout_gravity="center"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Search View and Add Friends Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp">
+
+        <SearchView
+            android:id="@+id/member_search_view"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginTop="15dp"
+            android:layout_marginEnd="8dp"
+            android:queryHint="Add Members"
+            android:iconifiedByDefault="false" />
+
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/members_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="50dp"/>
 
     <!-- Create Group Button -->
     <Button
@@ -49,5 +76,7 @@
         android:textColor="@android:color/white"
         android:backgroundTint="@color/dark_blue"
         android:layout_gravity="center"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"/>
 </LinearLayout>
+

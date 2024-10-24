@@ -1,23 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="16dp">
+    android:padding="8dp">
+
+    <ImageView
+        android:id="@+id/profile_image_view"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="8dp"
+        android:contentDescription="Profile Picture"
+        android:background="@drawable/rounded_image_view"
+        tools:ignore="HardcodedText" />
 
     <TextView
-        android:id="@+id/member_name_text_view"
+        android:id="@+id/username_text_view"
         android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:layout_height="wrap_content" />
+        android:textSize="16sp"
+        android:textColor="@android:color/black" />
 
-    <Button
-        android:id="@+id/remove_member_button"
+    <CheckBox
+        android:id="@+id/checkbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/remove"
-        android:layout_gravity="right"
-        android:text="Remove"
-        android:visibility="gone" /> <!-- Visible only for group creators -->
-
+        android:focusable="false" />
 </LinearLayout>
+

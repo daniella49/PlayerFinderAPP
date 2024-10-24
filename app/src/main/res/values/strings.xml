@@ -4,4 +4,6 @@
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
+    <string name="friend_profile_picture">friend profile picture</string>
+    <string name="friend_name">Friend Name</string>
 </resources>

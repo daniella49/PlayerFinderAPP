@@ -1,10 +1,12 @@
-package com.example.playerfinderapp;
+package com.example.playerfinderapp.activities;
 
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.playerfinderapp.R;
 
 import java.util.List;
 

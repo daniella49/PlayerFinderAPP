@@ -49,12 +49,11 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@android:color/transparent"
-            android:clickable="false"
-            android:focusable="false"
             android:hint="Search Username"
             android:inputType="text"
             android:minHeight="48dp"
             android:padding="10dp" />
+
     </LinearLayout>
 
     <!-- Friends list for selecting a user to chat -->
@@ -66,6 +65,14 @@
         android:divider="@android:color/darker_gray"
         android:dividerHeight="1dp"
         android:layout_marginBottom="20dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:hint="or"
+        android:textStyle="bold"
+        android:layout_gravity="center" />
 
     <!-- Button to create group chat -->
     <Button

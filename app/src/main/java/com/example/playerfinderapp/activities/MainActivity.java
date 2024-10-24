@@ -1,21 +1,25 @@
-package com.example.playerfinderapp;
+package com.example.playerfinderapp.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.playerfinderapp.R;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class MainActivity extends AppCompatActivity {
 
     // Declare FirebaseAuth instance
     private FirebaseAuth auth;
+
+    // Declare Firestore instance
+    private static FirebaseFirestore db;
 
     // Declare UI elements
     private EditText emailEditText, passwordEditText;
@@ -28,6 +32,9 @@ public class MainActivity extends AppCompatActivity {
 
         // Initialize FirebaseAuth instance
         auth = FirebaseAuth.getInstance();
+
+        // Initialize Firestore instance
+        db = FirebaseFirestore.getInstance();
 
         // Bind UI elements
         emailEditText = findViewById(R.id.emailEditText);
@@ -68,5 +75,10 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(MainActivity.this, "Login failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    // Get Firestore instance
+    public static FirebaseFirestore getFirestore() {
+        return db;
     }
 }

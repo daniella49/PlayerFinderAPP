@@ -12,7 +12,6 @@
         android:id="@+id/return_button"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:layout_alignParentStart="true"
         android:layout_marginTop="30dp"
         android:background="@android:color/transparent"
         android:contentDescription="Return"
@@ -40,16 +39,29 @@
             android:contentDescription="Profile picture"
             android:scaleType="centerCrop" />
 
-        <!-- Username -->
+        <!-- Username (for private chat) -->
         <TextView
-            android:id="@+id/chat_title"
+            android:id="@+id/username"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="[Username]"
             android:textSize="20sp"
             android:textColor="#FFFFFF"
             android:gravity="center"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:visibility="gone" /> <!-- Initially hidden, show when it's a private chat -->
+
+        <!-- Group Name (for group chat) -->
+        <TextView
+            android:id="@+id/group_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="[Group Name]"
+            android:textSize="20sp"
+            android:textColor="#FFFFFF"
+            android:gravity="center"
+            android:textStyle="bold"
+            android:visibility="gone" /> <!-- Initially hidden, show when it's a group chat -->
     </LinearLayout>
 
     <!-- Chat Messages -->
@@ -99,6 +111,6 @@
             android:scaleType="fitCenter"
             android:src="@drawable/send_button"
             android:tint="@android:color/white"
-            tools:ignore="UseAppTint,TouchTargetSizeCheck,TouchTargetSizeCheck" />
+            tools:ignore="UseAppTint,TouchTargetSizeCheck" />
     </LinearLayout>
 </LinearLayout>

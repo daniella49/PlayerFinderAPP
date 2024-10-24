@@ -58,8 +58,10 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.analytics)
 
-    // RecyclerView dependency for list views
-    implementation(libs.recyclerview)
+    // RecyclerView dependency for recycler view
+    implementation (libs.recyclerview)
+
+
 
     // Picasso for image loading
     implementation(libs.picasso)
@@ -76,6 +78,7 @@ dependencies {
     // Navigation dependencies
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
+    implementation(libs.generativeai)
 
     // Testing dependencies
     testImplementation(libs.junit)

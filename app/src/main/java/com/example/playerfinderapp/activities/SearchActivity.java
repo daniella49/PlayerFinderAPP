@@ -1,4 +1,4 @@
-package com.example.playerfinderapp;
+package com.example.playerfinderapp.activities;
 
 import android.app.AlertDialog;
 import android.content.Intent;
@@ -28,6 +28,8 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import com.example.playerfinderapp.R;
 
 public class SearchActivity extends AppCompatActivity {
 
