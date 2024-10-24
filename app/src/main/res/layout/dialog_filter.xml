@@ -1,0 +1,13 @@
+<!-- res/layout/dialog_filter.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <CheckBox
+        android:id="@+id/checkbox_favorite_games"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Search by list of favorite games of the user" />
+</LinearLayout>

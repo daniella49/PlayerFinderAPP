@@ -6,16 +6,60 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Search Bar -->
-    <EditText
-        android:id="@+id/search_input"
+    <!-- Search Bar Container -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
         android:layout_marginTop="20dp"
-        android:hint="Search for players or games"
-        android:minHeight="48dp"
-        android:padding="8dp" />
+        android:background="@color/white"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageButton
+            android:id="@+id/back_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackground"
+            android:src="@drawable/ic_arrow_left"
+            android:contentDescription="Back" />
+
+        <EditText
+            android:id="@+id/search_input"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:background="@null"
+            android:hint="Search for players or games"
+            android:padding="8dp" />
+
+        <ImageButton
+            android:id="@+id/clear_input_button"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:background="?attr/selectableItemBackground"
+            android:src="@drawable/ic_clear"
+            android:contentDescription="Clear Input"
+            android:padding="4dp"
+            android:layout_marginStart="8dp"
+            />
+
+        <ImageButton
+            android:id="@+id/search_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="Search"
+            android:src="@android:drawable/ic_menu_search" />
+
+    </LinearLayout>
+
+    <!-- Search Results -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/search_results_recyclerview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="16dp"
+        android:visibility="gone" />
 
 </LinearLayout>
-

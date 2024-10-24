@@ -69,9 +69,22 @@
             android:name=".SearchActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".GameUsersActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".SearchResultsActivity"
+            android:exported="false"/>
+
+
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="default_channel_id" />
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+
 
     </application>
 

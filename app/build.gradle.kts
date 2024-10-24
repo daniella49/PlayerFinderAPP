@@ -38,6 +38,12 @@ android {
 }
 
 dependencies {
+
+    // Google Play Services dependencies
+    implementation("com.google.android.gms:play-services-base:18.3.0")
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+
+
     // AndroidX and core dependencies
     implementation(libs.appcompat)
     implementation(libs.material)
@@ -79,6 +85,4 @@ dependencies {
     // Glide for image loading
     implementation(libs.glide)
     annotationProcessor(libs.compiler)
-
-
 }

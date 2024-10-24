@@ -11,20 +11,26 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class RegisterActivity extends AppCompatActivity {
 
     private EditText fullnameEditText, usernameEditText, emailEditText, passwordEditText;
     private Button createAccountButton;
     private FirebaseAuth auth;
-
+    private FirebaseFirestore db; // Add Firestore instance
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register); // Ensure your XML layout file is named activity_register.xml
 
-        // Initialize Firebase Auth
+        // Initialize Firebase Auth and Firestore
         auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance(); // Initialize Firestore
 
         // Bind views
         fullnameEditText = findViewById(R.id.fullnameEditText);
@@ -64,22 +70,44 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-
         // Create user account with email and password
         auth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        // Account creation successful
-                        Toast.makeText(RegisterActivity.this, "Account created successfully!", Toast.LENGTH_SHORT).show();
+                        FirebaseUser user = auth.getCurrentUser();
+                        if (user != null) {
+                            // Create a Map of user data
+                            Map<String, Object> userData = new HashMap<>();
+                            userData.put("fullname", fullname);
+                            userData.put("username", username);
+                            userData.put("email", email);
+                            userData.put("uid", user.getUid()); // Store user ID
 
-                        // Optionally save user info to Firestore or Realtime Database
-                        // Redirect to HomeActivity
-                        Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
-                        startActivity(intent);
-                        finish(); // Close this activity
+                            // Save to Firestore
+                            db.collection("users").document(user.getUid())
+                                    .set(userData)
+                                    .addOnSuccessListener(aVoid -> {
+                                        // Both Auth and Firestore operations successful
+                                        Toast.makeText(RegisterActivity.this,
+                                                "Account created successfully!", Toast.LENGTH_SHORT).show();
+
+                                        // Redirect to HomeActivity
+                                        Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
+                                        startActivity(intent);
+                                        finish();
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        // Firestore operation failed
+                                        Toast.makeText(RegisterActivity.this,
+                                                "Failed to save user data: " + e.getMessage(),
+                                                Toast.LENGTH_SHORT).show();
+                                    });
+                        }
                     } else {
-                        // Account creation failed
-                        Toast.makeText(RegisterActivity.this, "Registration failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        // Auth creation failed
+                        Toast.makeText(RegisterActivity.this,
+                                "Registration failed: " + task.getException().getMessage(),
+                                Toast.LENGTH_SHORT).show();
                     }
                 });
     }

@@ -3,6 +3,7 @@ package com.example.playerfinderapp;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -30,6 +31,19 @@ public class HomeActivity extends AppCompatActivity {
 
         // Set up listeners for buttons
         setupListeners();
+
+        // Set up click listener for games list
+        popularGamesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String selectedGame = (String) parent.getItemAtPosition(position);
+
+                // Navigate to GameUsersActivity with the selected game
+                Intent intent = new Intent(HomeActivity.this, GameUsersActivity.class);
+                intent.putExtra("GAME_NAME", selectedGame);
+                startActivity(intent);
+            }
+        });
 
         // Load popular games into the ListView
         loadPopularGames();
