@@ -17,7 +17,7 @@
 
         <!-- Main Activity that launches the app -->
         <activity
-            android:name=".MainActivity"
+            android:name=".activities.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,54 +27,45 @@
 
         <!-- Other activities -->
         <activity
-            android:name=".RegisterActivity"
+            android:name=".activities.RegisterActivity"
             android:exported="false" />
 
         <activity
-            android:name=".HomeActivity"
+            android:name=".activities.HomeActivity"
             android:exported="false" />
 
         <activity
-            android:name=".ChatListActivity"
+            android:name=".activities.ChatListActivity"
             android:exported="false" />
 
         <activity
-            android:name=".CreateNewChatActivity"
+            android:name=".activities.CreateNewChatActivity"
             android:exported="false" />
 
         <activity
-        android:name=".PrivateChatActivity"
-        android:exported="false"
-        android:label="@string/title_activity_private_chat" />
-
-        <activity
-            android:name=".CreateGroupActivity"
+            android:name=".activities.CreateGroupActivity"
             android:exported="false" />
 
         <activity
-            android:name=".GroupChatActivity"
+            android:name=".activities.GroupDetailsActivity"
             android:exported="false" />
 
         <activity
-            android:name=".GroupDetailsActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".ProfileActivity"
+            android:name=".activities.ProfileActivity"
             android:exported="false"
             android:label="Profile" />
 
 
         <activity
-            android:name=".SearchActivity"
+            android:name=".activities.SearchActivity"
             android:exported="false" />
 
         <activity
-            android:name=".GameUsersActivity"
+            android:name=".activities.GameUsersActivity"
             android:exported="false" />
 
         <activity
-            android:name=".SearchResultsActivity"
+            android:name=".activities.SearchResultsActivity"
             android:exported="false"/>
 
 

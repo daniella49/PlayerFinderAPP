@@ -1,4 +1,4 @@
-package com.example.playerfinderapp;
+package com.example.playerfinderapp.activities;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
@@ -12,6 +12,8 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.playerfinderapp.R;
+import com.example.playerfinderapp.adapters.UserAdapter;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
