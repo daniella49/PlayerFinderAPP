@@ -44,6 +44,10 @@
         <activity
             android:name=".activities.CreateNewChatActivity"
             android:exported="false" />
+        <activity
+            android:name=".activities.ChatActivity"
+            android:exported="false" />
+
 
         <activity
             android:name=".activities.CreateGroupActivity"

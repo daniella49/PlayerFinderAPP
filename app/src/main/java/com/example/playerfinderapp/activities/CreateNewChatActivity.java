@@ -36,6 +36,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CreateNewChatActivity extends AppCompatActivity {
+    private static final String TAG = "CreateNewChatActivity";
+
     private List<Map<String, Object>> friendsList;
     private FriendsAdapter adapter;
     private FirebaseFirestore db;
@@ -149,14 +151,17 @@ public class CreateNewChatActivity extends AppCompatActivity {
 
     public void createChat(String friendId, String friendName) {
         if (auth.getCurrentUser() == null) {
-            Toast.makeText(this, "You must be logged in", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "User not authenticated");
+            Toast.makeText(this, "Please sign in first", Toast.LENGTH_SHORT).show();
             return;
         }
 
         String currentUserId = auth.getCurrentUser().getUid();
-        String chatId = currentUserId + "_" + friendId;
+        String chatId = generateChatId(currentUserId, friendId);
 
-        // First check if the chat already exists
+        Log.d(TAG, "Attempting to create chat with friendId: " + friendId + ", friendName: " + friendName);
+
+        // First check if chat exists
         db.collection("users")
                 .document(currentUserId)
                 .collection("chats")
@@ -164,69 +169,73 @@ public class CreateNewChatActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
-                        // Chat already exists, just open it
+                        Log.d(TAG, "Chat already exists, navigating to chat");
                         navigateToChat(chatId, friendId, friendName);
                     } else {
-                        // Create new chat
-                        Map<String, Object> mainChatData = new HashMap<>();
-                        mainChatData.put("createdAt", FieldValue.serverTimestamp());
-                        mainChatData.put("participants", Arrays.asList(currentUserId, friendId));
-                        mainChatData.put("lastMessage", "");
-                        mainChatData.put("lastMessageTime", FieldValue.serverTimestamp());
-
-                        // First create the main chat document
-                        db.collection("chats")
-                                .document(chatId)
-                                .set(mainChatData)
-                                .addOnSuccessListener(aVoid -> {
-                                    // Now create chat references for both users
-                                    createChatReferences(chatId, currentUserId, friendId, friendName);
-                                })
-                                .addOnFailureListener(e -> {
-                                    Toast.makeText(this, "Error creating chat: " + e.getMessage(),
-                                            Toast.LENGTH_SHORT).show();
-                                    Log.e("CreateChat", "Error creating main chat document", e);
-                                });
+                        Log.d(TAG, "Creating new chat");
+                        createNewChat(chatId, currentUserId, friendId, friendName);
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error checking existing chat: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
-                    Log.e("CreateChat", "Error checking existing chat", e);
+                    Log.e(TAG, "Error checking existing chat: ", e);
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
-    private void createChatReferences(String chatId, String currentUserId, String friendId, String friendName) {
-        // Get current user's data
+    private void createNewChat(String chatId, String currentUserId, String friendId, String friendName) {
+        // Get current user's data first
         db.collection("users")
                 .document(currentUserId)
                 .get()
                 .addOnSuccessListener(currentUserDoc -> {
                     String currentUsername = currentUserDoc.getString("username");
-                    WriteBatch batch = db.batch();
+                    Log.d(TAG, "Got current username: " + currentUsername);
 
-                    // Current user's chat reference
-                    DocumentReference currentUserChatRef = db.collection("users")
-                            .document(currentUserId)
-                            .collection("chats")
-                            .document(chatId);
+                    // Create main chat document
+                    Map<String, Object> chatData = new HashMap<>();
+                    chatData.put("participants", Arrays.asList(currentUserId, friendId));
+                    chatData.put("createdAt", FieldValue.serverTimestamp());
+                    chatData.put("lastMessage", "");
+                    chatData.put("lastMessageTime", FieldValue.serverTimestamp());
 
-                    Map<String, Object> currentUserChat = new HashMap<>();
-                    currentUserChat.put("chatId", chatId);
-                    currentUserChat.put("friendId", friendId);
-                    currentUserChat.put("friendName", friendName);
-                    currentUserChat.put("lastMessage", "");
-                    currentUserChat.put("lastMessageTime", FieldValue.serverTimestamp());
-                    currentUserChat.put("unreadCount", 0);
+                    db.collection("chats")
+                            .document(chatId)
+                            .set(chatData)
+                            .addOnSuccessListener(aVoid -> {
+                                Log.d(TAG, "Main chat document created successfully");
+                                createUserChatReferences(chatId, currentUserId, currentUsername, friendId, friendName);
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Error creating main chat document: ", e);
+                                Toast.makeText(this, "Error creating chat: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error getting current user data: ", e);
+                    Toast.makeText(this, "Error getting user data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
 
-                    batch.set(currentUserChatRef, currentUserChat);
+    private void createUserChatReferences(String chatId, String currentUserId, String currentUsername,
+                                          String friendId, String friendName) {
+        // Create chat reference for current user
+        Map<String, Object> currentUserChat = new HashMap<>();
+        currentUserChat.put("chatId", chatId);
+        currentUserChat.put("friendId", friendId);
+        currentUserChat.put("friendName", friendName);
+        currentUserChat.put("lastMessage", "");
+        currentUserChat.put("lastMessageTime", FieldValue.serverTimestamp());
+        currentUserChat.put("unreadCount", 0);
 
-                    // Friend's chat reference
-                    DocumentReference friendChatRef = db.collection("users")
-                            .document(friendId)
-                            .collection("chats")
-                            .document(chatId);
+        db.collection("users")
+                .document(currentUserId)
+                .collection("chats")
+                .document(chatId)
+                .set(currentUserChat)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Current user chat reference created");
 
+                    // Create chat reference for friend
                     Map<String, Object> friendChat = new HashMap<>();
                     friendChat.put("chatId", chatId);
                     friendChat.put("friendId", currentUserId);
@@ -235,30 +244,38 @@ public class CreateNewChatActivity extends AppCompatActivity {
                     friendChat.put("lastMessageTime", FieldValue.serverTimestamp());
                     friendChat.put("unreadCount", 0);
 
-                    batch.set(friendChatRef, friendChat);
-
-                    // Commit the batch
-                    batch.commit()
-                            .addOnSuccessListener(aVoid -> {
-                                Toast.makeText(this, "Chat created successfully",
-                                        Toast.LENGTH_SHORT).show();
+                    db.collection("users")
+                            .document(friendId)
+                            .collection("chats")
+                            .document(chatId)
+                            .set(friendChat)
+                            .addOnSuccessListener(aVoid1 -> {
+                                Log.d(TAG, "Friend chat reference created, navigating to chat");
+                                Toast.makeText(this, "Chat created successfully", Toast.LENGTH_SHORT).show();
                                 navigateToChat(chatId, friendId, friendName);
                             })
                             .addOnFailureListener(e -> {
-                                Toast.makeText(this, "Error creating chat references: " + e.getMessage(),
+                                Log.e(TAG, "Error creating friend chat reference: ", e);
+                                Toast.makeText(this, "Error creating friend's chat reference: " + e.getMessage(),
                                         Toast.LENGTH_SHORT).show();
-                                Log.e("CreateChat", "Error creating chat references", e);
                             });
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error getting user data: " + e.getMessage(),
+                    Log.e(TAG, "Error creating current user chat reference: ", e);
+                    Toast.makeText(this, "Error creating chat reference: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
-                    Log.e("CreateChat", "Error getting user data", e);
                 });
     }
 
 
+    private String generateChatId(String userId1, String userId2) {
+        List<String> ids = Arrays.asList(userId1, userId2);
+        Collections.sort(ids);
+        return ids.get(0) + "_" + ids.get(1);
+    }
+
     private void navigateToChat(String chatId, String friendId, String friendName) {
+        Log.d(TAG, "Navigating to chat with id: " + chatId + ", friend: " + friendName);
         Intent intent = new Intent(this, ChatActivity.class);
         intent.putExtra("chatId", chatId);
         intent.putExtra("friendId", friendId);

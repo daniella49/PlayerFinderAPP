@@ -2,6 +2,7 @@ package com.example.playerfinderapp.adapters;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -52,7 +53,6 @@ public class FriendsAdapter extends RecyclerView.Adapter<FriendsAdapter.ViewHold
 
         holder.usernameText.setText(username);
 
-        // Show different buttons based on whether it's the user's own profile
         if (isOwnProfile) {
             holder.removeButton.setVisibility(View.VISIBLE);
             holder.addButton.setVisibility(View.GONE);
@@ -61,17 +61,17 @@ public class FriendsAdapter extends RecyclerView.Adapter<FriendsAdapter.ViewHold
             holder.removeButton.setVisibility(View.GONE);
             holder.addButton.setVisibility(View.VISIBLE);
 
-            // Update the entire item click for chat creation
-            holder.itemView.setOnClickListener(v -> {
-                if (v.getContext() instanceof CreateNewChatActivity) {
-                    ((CreateNewChatActivity) v.getContext()).createChat(friendId, username);
-                }
-            });
-
-            // Optional: Also handle the add button click
+            // Handle add button click for chat creation
             holder.addButton.setOnClickListener(v -> {
-                if (v.getContext() instanceof CreateNewChatActivity) {
-                    ((CreateNewChatActivity) v.getContext()).createChat(friendId, username);
+                try {
+                    if (v.getContext() instanceof CreateNewChatActivity) {
+                        CreateNewChatActivity activity = (CreateNewChatActivity) v.getContext();
+                        activity.createChat(friendId, username);
+                    }
+                } catch (Exception e) {
+                    Log.e("FriendsAdapter", "Error creating chat: ", e);
+                    Toast.makeText(v.getContext(), "Error creating chat: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
                 }
             });
         }
