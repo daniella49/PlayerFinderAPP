@@ -3,10 +3,13 @@ package com.example.playerfinderapp.activities;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -16,6 +19,8 @@ import com.example.playerfinderapp.R;
 import com.example.playerfinderapp.adapters.MessageAdapter;
 import com.example.playerfinderapp.models.Message;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
@@ -23,102 +28,142 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ChatActivity extends AppCompatActivity {
-
+    private static final String TAG = "ChatActivity";
     private RecyclerView recyclerViewMessages;
     private EditText editTextMessage;
-    private Button buttonSend;
+    private ImageButton buttonSend;
     private MessageAdapter messageAdapter;
     private List<Message> messages;
+    private TextView usernameTextView;
 
     private FirebaseFirestore firestore;
+    private FirebaseAuth auth;
     private ListenerRegistration messageListener;
 
-    private String chatId; // Group or Private chat ID
-    private String currentUserId; // ID of the logged-in user
-    private boolean isGroupChat; // True if this is a group chat, false if private
+    private String chatId;
+    private String friendId;
+    private String friendName;
+    private String currentUserId;
 
-    @SuppressLint("WrongViewCast")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
+        // Get intent extras
+        chatId = getIntent().getStringExtra("chatId");
+        friendId = getIntent().getStringExtra("friendId");
+        friendName = getIntent().getStringExtra("friendName");
+
+        // Initialize Firebase
+        firestore = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
+        currentUserId = auth.getCurrentUser().getUid();
+
         // Initialize views
         recyclerViewMessages = findViewById(R.id.messages_recycler_view);
         editTextMessage = findViewById(R.id.message_input);
         buttonSend = findViewById(R.id.send_button);
-        TextView groupNameTextView = findViewById(R.id.group_name);
-        TextView usernameTextView = findViewById(R.id.username);
+        usernameTextView = findViewById(R.id.username);
+        ImageButton returnButton = findViewById(R.id.return_button);
 
-        firestore = FirebaseFirestore.getInstance();
+        // Set up username
+        usernameTextView.setText(friendName);
+        usernameTextView.setVisibility(View.VISIBLE);
 
+        // Set up return button
+        returnButton.setOnClickListener(v -> finish());
+
+        // Set up messages
         messages = new ArrayList<>();
-        messageAdapter = new MessageAdapter(this, messages, isGroupChat);
+        messageAdapter = new MessageAdapter(this, messages, currentUserId);
         recyclerViewMessages.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewMessages.setAdapter(messageAdapter);
-
-        // Get chatId and isGroupChat from intent extras
-        chatId = getIntent().getStringExtra("CHAT_ID");
-        isGroupChat = getIntent().getBooleanExtra("IS_GROUP_CHAT", false);
-        currentUserId = ""; // Assign the logged-in user's ID here
 
         // Load messages
         loadMessages();
 
-        buttonSend.setOnClickListener(view -> sendMessage());
-
-        // Set up click listeners for group name and username
-        if (isGroupChat) {
-            groupNameTextView.setVisibility(View.VISIBLE);
-            groupNameTextView.setOnClickListener(view -> {
-                Intent intent = new Intent(ChatActivity.this, GroupDetailsActivity.class);
-                intent.putExtra("CHAT_ID", chatId);
-                startActivity(intent);
-            });
-        } else {
-            usernameTextView.setVisibility(View.VISIBLE);
-            usernameTextView.setOnClickListener(view -> {
-                Intent intent = new Intent(ChatActivity.this, ProfileActivity.class);
-                intent.putExtra("USER_ID", currentUserId); // Pass the user's ID for the profile
-                startActivity(intent);
-            });
-        }
+        // Set up send button
+        buttonSend.setOnClickListener(v -> sendMessage());
     }
 
     private void loadMessages() {
-        // Listener for real-time updates
-        Query query = firestore.collection("chats").document(chatId).collection("messages").orderBy("timestamp");
+        if (chatId == null) return;
+
+        Query query = firestore.collection("chats")
+                .document(chatId)
+                .collection("messages")
+                .orderBy("timestamp", Query.Direction.ASCENDING);
+
         messageListener = query.addSnapshotListener((value, error) -> {
-            if (error != null || value == null) return;
+            if (error != null) {
+                Log.e(TAG, "Error loading messages:", error);
+                return;
+            }
 
             messages.clear();
-            for (QueryDocumentSnapshot doc : value) {
-                Message message = doc.toObject(Message.class);
-                messages.add(message);
+            if (value != null) {
+                for (QueryDocumentSnapshot doc : value) {
+                    Message message = doc.toObject(Message.class);
+                    messages.add(message);
+                }
+                messageAdapter.notifyDataSetChanged();
+                recyclerViewMessages.scrollToPosition(messages.size() - 1);
             }
-            messageAdapter.notifyDataSetChanged();
-            recyclerViewMessages.scrollToPosition(messages.size() - 1); // Scroll to the bottom
         });
     }
 
     private void sendMessage() {
         String messageText = editTextMessage.getText().toString().trim();
-        if (messageText.isEmpty()) return;
+        if (messageText.isEmpty() || chatId == null) return;
 
-        Message message = new Message(messageText, currentUserId, "", true, new Date());
-        firestore.collection("chats").document(chatId).collection("messages").add(message);
+        Map<String, Object> messageData = new HashMap<>();
+        messageData.put("text", messageText);
+        messageData.put("senderId", currentUserId);
+        messageData.put("timestamp", FieldValue.serverTimestamp());
 
-        editTextMessage.setText(""); // Clear the input field
+        firestore.collection("chats")
+                .document(chatId)
+                .collection("messages")
+                .add(messageData)
+                .addOnSuccessListener(documentReference -> {
+                    editTextMessage.setText("");
+                    updateLastMessage(messageText);
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Error sending message: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show());
+    }
+
+    private void updateLastMessage(String messageText) {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("lastMessage", messageText);
+        updates.put("lastMessageTime", FieldValue.serverTimestamp());
+
+        // Update both users' chat references
+        firestore.collection("users")
+                .document(currentUserId)
+                .collection("chats")
+                .document(chatId)
+                .update(updates);
+
+        firestore.collection("users")
+                .document(friendId)
+                .collection("chats")
+                .document(chatId)
+                .update(updates);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         if (messageListener != null) {
-            messageListener.remove(); // Remove the listener when the activity is stopped
+            messageListener.remove();
         }
     }
 }

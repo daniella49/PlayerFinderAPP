@@ -1,49 +1,28 @@
 package com.example.playerfinderapp.models;
 
-import java.util.Date;
+import com.google.firebase.Timestamp;
 
 public class Message {
-    private String messageText;
-    private String senderId; // User ID of the sender
-    private String senderUsername; //  the sender's username
-    private boolean isSent; // field to indicate if the message was sent
-    private Date timestamp; // Time the message was sent
+    private String text;
+    private String senderId;
+    private Timestamp timestamp;
 
-    public Message() {
-        // Required empty constructor for Firestore
-    }
+    // Required empty constructor for Firestore
+    public Message() {}
 
-    public Message(String messageText, String senderId, String senderUsername, boolean isSent, Date timestamp) {
-        this.messageText = messageText;
+    public Message(String text, String senderId, Timestamp timestamp) {
+        this.text = text;
         this.senderId = senderId;
-        this.senderUsername = senderUsername; // Initialize the username
-        this.isSent = isSent;
         this.timestamp = timestamp;
     }
 
-    // Getters and setters
-    public String getMessageText() {
-        return messageText;
-    }
+    // Getters
+    public String getText() { return text != null ? text : ""; }
+    public String getSenderId() { return senderId != null ? senderId : ""; }
+    public Timestamp getTimestamp() { return timestamp; }
 
-    public String getSenderId() {
-        return senderId;
-    }
-
-    public String getSenderUsername() {
-        return senderUsername; // Getter for the username
-    }
-
-    public void setSenderUsername(String senderUsername) {
-        this.senderUsername = senderUsername; // Setter for the username
-    }
-
-    public boolean isSent() { // Getter for isSent
-        return isSent;
-    }
-
-    public Date getTimestamp() {
-        return timestamp;
-    }
+    // Setters
+    public void setText(String text) { this.text = text; }
+    public void setSenderId(String senderId) { this.senderId = senderId; }
+    public void setTimestamp(Timestamp timestamp) { this.timestamp = timestamp; }
 }
-

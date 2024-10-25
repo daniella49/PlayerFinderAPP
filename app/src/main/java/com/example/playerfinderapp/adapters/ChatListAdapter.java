@@ -34,11 +34,24 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatVi
     @Override
     public void onBindViewHolder(@NonNull ChatViewHolder holder, int position) {
         Chat chat = chatList.get(position);
-        holder.usernameTextView.setText(chat.getUsername());
-        holder.lastMessageTextView.setText(chat.getLastMessage()); //
 
-        holder.itemView.setOnClickListener(v -> onChatClickListener.onChatClick(chat));
-        holder.trashIcon.setOnClickListener(v -> onChatClickListener.onTrashClick(chat));
+        // Set the chat details
+        holder.usernameTextView.setText(chat.getUsername());
+        holder.lastMessageTextView.setText(chat.getLastMessage());
+
+        // Handle click on the entire row
+        holder.itemView.setOnClickListener(v -> {
+            if (onChatClickListener != null) {
+                onChatClickListener.onChatClick(chat);
+            }
+        });
+
+        // Handle trash icon click if needed
+        holder.trashIcon.setOnClickListener(v -> {
+            if (onChatClickListener != null) {
+                onChatClickListener.onTrashClick(chat);
+            }
+        });
     }
 
     @Override
