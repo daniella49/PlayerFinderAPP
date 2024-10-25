@@ -84,6 +84,22 @@ public class AddFriendsActivity extends AppCompatActivity {
         }
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        // Add the selected friends to the current user's "friends" collection
+        for (String friendId : selectedFriends) {
+            db.collection("users").document(currentUserId).collection("friends")
+                    .document(friendId)
+                    .set(new HashMap<>()) // Optionally, add other info like friendName here
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "Friend " + friendsMap.get(friendId) + " added to your friends list.", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Error adding friend " + friendsMap.get(friendId), Toast.LENGTH_SHORT).show();
+                    });
+        }
+
+        // Add friends to the group if necessary
         db.collection("groups").document(groupId)
                 .update("members", FieldValue.arrayUnion(selectedFriends))
                 .addOnSuccessListener(aVoid -> {

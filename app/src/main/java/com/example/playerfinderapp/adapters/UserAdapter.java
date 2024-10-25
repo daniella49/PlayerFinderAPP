@@ -4,6 +4,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -12,68 +13,109 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.playerfinderapp.R;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder> {
-    private static final String TAG = "UserAdapter";
     private List<Map<String, Object>> userList;
+    private FirebaseAuth auth;
+    private FirebaseFirestore db;
 
-    // Constructor
     public UserAdapter(List<Map<String, Object>> userList) {
         this.userList = userList;
-        Log.d(TAG, "UserAdapter created with " + userList.size() + " users");
+        this.auth = FirebaseAuth.getInstance();
+        this.db = FirebaseFirestore.getInstance();
     }
 
-    @NonNull
     @Override
-    public UserViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.search_list_user, parent, false);
+    public UserViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.search_list_user, parent, false);
         return new UserViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull UserViewHolder holder, int position) {
+    public void onBindViewHolder(UserViewHolder holder, int position) {
         Map<String, Object> user = userList.get(position);
-
-        // Set username
-        String username = (String) user.get("username");
-        holder.usernameTextView.setText(username != null ? username : "");
-
-        // Handle add button click
-        holder.addUserButton.setOnClickListener(v -> {
-            Toast.makeText(v.getContext(), "Added " + username, Toast.LENGTH_SHORT).show();
-            // Add your logic here for what happens when the add button is clicked
-        });
-
-        // Profile image is set to default in XML (ic_profile_picture_default)
-        // If you later add profile image URLs, you can load them here using Glide or Picasso
+        holder.bind(user);
     }
 
     @Override
     public int getItemCount() {
-        return userList != null ? userList.size() : 0;
+        return userList.size();
     }
 
-    public void updateUserList(List<Map<String, Object>> newUserList) {
-        this.userList = newUserList;
-        notifyDataSetChanged();
-    }
-
-    // ViewHolder class
-    static class UserViewHolder extends RecyclerView.ViewHolder {
+    public class UserViewHolder extends RecyclerView.ViewHolder {
         TextView usernameTextView;
-        ImageView profileImageView;
-        ImageView addUserButton;
+        ImageView addFriendButton;
 
-        public UserViewHolder(@NonNull View itemView) {
+        public UserViewHolder(View itemView) {
             super(itemView);
-            // Initialize views
-            usernameTextView = itemView.findViewById(R.id.username);
-            profileImageView = itemView.findViewById(R.id.profile_image);
-            addUserButton = itemView.findViewById(R.id.add_user_button);
+            usernameTextView = itemView.findViewById(R.id.username_text_view);
+            addFriendButton = itemView.findViewById(R.id.add_friend_button);
+
+            addFriendButton.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                if (position != RecyclerView.NO_POSITION) {
+                    addFriend(userList.get(position));
+                }
+            });
+        }
+
+        public void bind(Map<String, Object> user) {
+            usernameTextView.setText((String) user.get("username"));
+        }
+
+        private void addFriend(Map<String, Object> friendUser) {
+            String currentUserId = auth.getCurrentUser().getUid();
+            String friendUserId = (String) friendUser.get("uid"); // Make sure your user data contains "uid"
+
+            // Skip if trying to add self
+            if (currentUserId.equals(friendUserId)) {
+                Toast.makeText(itemView.getContext(), "Cannot add yourself as friend", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Create friend data for current user's list
+            Map<String, Object> friendData = new HashMap<>();
+            friendData.put("uid", friendUserId);
+            friendData.put("username", friendUser.get("username"));
+
+            // Add to current user's friends list
+            db.collection("users").document(currentUserId)
+                    .collection("friends")
+                    .document(friendUserId)
+                    .set(friendData)
+                    .addOnSuccessListener(aVoid -> {
+                        // Successfully added friend
+                        Toast.makeText(itemView.getContext(), "Friend added successfully", Toast.LENGTH_SHORT).show();
+
+                        // Change button to checkmark and disable it
+                        addFriendButton.setImageResource(R.drawable.ic_check);
+                        addFriendButton.setEnabled(false);
+
+                        // Add current user to friend's friends list
+                        db.collection("users").document(currentUserId)
+                                .get()
+                                .addOnSuccessListener(documentSnapshot -> {
+                                    Map<String, Object> currentUserData = new HashMap<>();
+                                    currentUserData.put("uid", currentUserId);
+                                    currentUserData.put("username", documentSnapshot.getString("username"));
+
+                                    db.collection("users").document(friendUserId)
+                                            .collection("friends")
+                                            .document(currentUserId)
+                                            .set(currentUserData);
+                                });
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(itemView.getContext(),
+                                    "Failed to add friend: " + e.getMessage(),
+                                    Toast.LENGTH_SHORT).show()
+                    );
         }
     }
 }

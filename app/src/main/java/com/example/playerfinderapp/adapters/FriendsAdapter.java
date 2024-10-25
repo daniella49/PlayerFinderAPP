@@ -1,5 +1,7 @@
 package com.example.playerfinderapp.adapters;
 
+import android.app.AlertDialog;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.playerfinderapp.R;
+import com.example.playerfinderapp.activities.CreateNewChatActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -53,22 +56,25 @@ public class FriendsAdapter extends RecyclerView.Adapter<FriendsAdapter.ViewHold
         if (isOwnProfile) {
             holder.removeButton.setVisibility(View.VISIBLE);
             holder.addButton.setVisibility(View.GONE);
-
-            // Handle remove friend
-            holder.removeButton.setOnClickListener(v -> removeFriend(position, friendId));
+            holder.removeButton.setOnClickListener(v -> showRemoveConfirmationDialog(position, friendId, v));
         } else {
             holder.removeButton.setVisibility(View.GONE);
             holder.addButton.setVisibility(View.VISIBLE);
 
-            // Handle add friend
-            holder.addButton.setOnClickListener(v -> sendFriendRequest(friendId, v));
-        }
+            // Update the entire item click for chat creation
+            holder.itemView.setOnClickListener(v -> {
+                if (v.getContext() instanceof CreateNewChatActivity) {
+                    ((CreateNewChatActivity) v.getContext()).createChat(friendId, username);
+                }
+            });
 
-        // Handle profile click
-        holder.itemView.setOnClickListener(v -> {
-            // Navigate to friend's profile
-            // Implementation depends on your navigation setup
-        });
+            // Optional: Also handle the add button click
+            holder.addButton.setOnClickListener(v -> {
+                if (v.getContext() instanceof CreateNewChatActivity) {
+                    ((CreateNewChatActivity) v.getContext()).createChat(friendId, username);
+                }
+            });
+        }
     }
 
     @Override
@@ -76,7 +82,8 @@ public class FriendsAdapter extends RecyclerView.Adapter<FriendsAdapter.ViewHold
         return friendsList.size();
     }
 
-    private void removeFriend(int position, String friendId) {
+
+    private void removeFriend(int position, String friendId, View view) {
         String currentUserId = auth.getCurrentUser().getUid();
 
         // Remove from both users' friends collections
@@ -84,15 +91,37 @@ public class FriendsAdapter extends RecyclerView.Adapter<FriendsAdapter.ViewHold
                 .collection("friends").document(friendId)
                 .delete()
                 .addOnSuccessListener(aVoid -> {
+                    // Remove the friend from the local list and update UI
                     friendsList.remove(position);
                     notifyItemRemoved(position);
                     notifyItemRangeChanged(position, friendsList.size());
-                });
 
-        // Also remove from friend's friends list
-        db.collection("users").document(friendId)
-                .collection("friends").document(currentUserId)
-                .delete();
+                    // Show success message
+                    Toast.makeText(view.getContext(),
+                            "Friend removed successfully", Toast.LENGTH_SHORT).show();
+
+                    // Remove from friend's friends list
+                    db.collection("users").document(friendId)
+                            .collection("friends").document(currentUserId)
+                            .delete()
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(view.getContext(),
+                                            "Error removing from friend's list: " + e.getMessage(),
+                                            Toast.LENGTH_SHORT).show());
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(view.getContext(),
+                                "Error removing friend: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show());
+    }
+
+    private void showRemoveConfirmationDialog(int position, String friendId, View view) {
+        new AlertDialog.Builder(view.getContext())
+                .setTitle("Remove Friend")
+                .setMessage("Are you sure you want to remove this friend?")
+                .setPositiveButton("Yes", (dialog, which) -> removeFriend(position, friendId, view))
+                .setNegativeButton("No", null)
+                .show();
     }
 
     private void sendFriendRequest(String friendId, View view) {
@@ -111,7 +140,7 @@ public class FriendsAdapter extends RecyclerView.Adapter<FriendsAdapter.ViewHold
                         Toast.makeText(view.getContext(), "Failed to send request", Toast.LENGTH_SHORT).show());
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    protected static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView profileImage;
         TextView usernameText;
         ImageButton removeButton;

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">אפליקציית חיפוש שחקנים</string>
+    <string name="title_activity_private_chat">שיחה פרטית</string>
+    <string name="title_home">בית</string>
+    <string name="title_dashboard">לוח מחוונים</string>
+    <string name="title_notifications">התראות</string>
+    <string name="friend_profile_picture">תמונת פרופיל של חבר</string>
+    <string name="friend_name">שם חבר</string>
+    <string name="remove_friend_description">הסר חבר</string>
+    <string name="add_friend_description">הוסף חבר</string>
+    <string name="profile_picture_description">תמונת פרופיל</string>
+</resources>

@@ -1,187 +1,269 @@
 package com.example.playerfinderapp.activities;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.BaseAdapter;
-import android.widget.Button;
+
+import android.util.Log;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.bumptech.glide.Glide;
 import com.example.playerfinderapp.R;
-import com.example.playerfinderapp.models.PrivateChat;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.playerfinderapp.adapters.FriendsAdapter;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.firestore.WriteBatch;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 public class CreateNewChatActivity extends AppCompatActivity {
-    private List<PrivateChat> friendsList;
+    private List<Map<String, Object>> friendsList;
     private FriendsAdapter adapter;
+    private FirebaseFirestore db;
+    private FirebaseAuth auth;
+    private String currentUserId;
+    private RecyclerView friendsRecyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_new_chat);
 
-        // Initialize the list of friends
+        // Initialize Firebase
+        db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
+        currentUserId = auth.getCurrentUser().getUid();
+        // Check if we're coming from a direct chat request
+        String friendId = getIntent().getStringExtra("friendId");
+        String friendName = getIntent().getStringExtra("friendName");
+
+        if (friendId != null && friendName != null) {
+            // Directly create chat with this friend
+            createChat(friendId, friendName);
+            return; // Skip the rest of the initialization
+        }
+
+        // Normal initialization for friend list view
+        // Initialize components
         friendsList = new ArrayList<>();
+        friendsRecyclerView = findViewById(R.id.friends_recycler_view);
+        EditText searchEditText = findViewById(R.id.search_username);
+        ImageButton returnButton = findViewById(R.id.return_button);
 
-        // Find ListView in the layout
-        ListView friendsListView = findViewById(R.id.friends_list_view);
-        EditText searchUsername = findViewById(R.id.search_username);
+        // Setup RecyclerView
+        friendsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new FriendsAdapter(friendsList, false) {
+            @Override
+            public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+                super.onBindViewHolder(holder, position);
 
-        // Set up custom adapter
-        adapter = new FriendsAdapter(this, friendsList);
-        friendsListView.setAdapter(adapter);
+                // Override click listener for chat creation
+                holder.itemView.setOnClickListener(v -> {
+                    Map<String, Object> friend = friendsList.get(position);
+                    createChat((String) friend.get("uid"), (String) friend.get("username"));
+                });
+            }
+        };
+        friendsRecyclerView.setAdapter(adapter);
 
-        // Fetch friends from Firestore
+        // Fetch friends
         fetchFriends();
 
-        // Implement search functionality
-        searchUsername.addTextChangedListener(new TextWatcher() {
+        // Setup search functionality
+        searchEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                adapter.getFilter().filter(s.toString());  // Filter friends
+                filterFriends(s.toString());
             }
 
             @Override
             public void afterTextChanged(Editable s) {}
         });
 
-        // Return button logic to go back to Chat List
-        ImageButton returnButton = findViewById(R.id.return_button);
-        returnButton.setOnClickListener(v -> {
-            Intent intent = new Intent(CreateNewChatActivity.this, ChatListActivity.class); // Ensure ChatListActivity is the correct activity
-            startActivity(intent);
-            finish(); // Finish current activity to prevent returning to it
-        });
-
-        // Create group button logic
-        findViewById(R.id.create_group_button).setOnClickListener(v -> {
-            Intent intent = new Intent(CreateNewChatActivity.this, CreateGroupActivity.class);
-            startActivity(intent);
-        });
+        // Setup return button
+        returnButton.setOnClickListener(v -> finish());
     }
 
     private void fetchFriends() {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("users")  // Adjust this collection name as per Firestore structure
+        String currentUserId = auth.getCurrentUser().getUid();
+
+        db.collection("users").document(currentUserId)
+                .collection("friends")
                 .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            PrivateChat friend = document.toObject(PrivateChat.class);
-                            friendsList.add(friend);
-                        }
-                        adapter.notifyDataSetChanged();
-                    } else {
-                        Toast.makeText(this, "Error getting friends: " + task.getException(), Toast.LENGTH_SHORT).show();
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    friendsList.clear();
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        Map<String, Object> friend = new HashMap<>();
+                        friend.put("uid", doc.getString("uid"));
+                        friend.put("username", doc.getString("username"));
+                        friendsList.add(friend);
                     }
+                    adapter.notifyDataSetChanged();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Error fetching friends: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show());
+    }
+
+    private void filterFriends(String searchText) {
+        if (searchText.isEmpty()) {
+            fetchFriends(); // Reset to original list
+            return;
+        }
+
+        List<Map<String, Object>> filteredList = new ArrayList<>();
+        for (Map<String, Object> friend : friendsList) {
+            String username = (String) friend.get("username");
+            if (username != null && username.toLowerCase().contains(searchText.toLowerCase())) {
+                filteredList.add(friend);
+            }
+        }
+
+        friendsList.clear();
+        friendsList.addAll(filteredList);
+        adapter.notifyDataSetChanged();
+    }
+
+
+    public void createChat(String friendId, String friendName) {
+        if (auth.getCurrentUser() == null) {
+            Toast.makeText(this, "You must be logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String currentUserId = auth.getCurrentUser().getUid();
+        String chatId = currentUserId + "_" + friendId;
+
+        // First check if the chat already exists
+        db.collection("users")
+                .document(currentUserId)
+                .collection("chats")
+                .document(chatId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        // Chat already exists, just open it
+                        navigateToChat(chatId, friendId, friendName);
+                    } else {
+                        // Create new chat
+                        Map<String, Object> mainChatData = new HashMap<>();
+                        mainChatData.put("createdAt", FieldValue.serverTimestamp());
+                        mainChatData.put("participants", Arrays.asList(currentUserId, friendId));
+                        mainChatData.put("lastMessage", "");
+                        mainChatData.put("lastMessageTime", FieldValue.serverTimestamp());
+
+                        // First create the main chat document
+                        db.collection("chats")
+                                .document(chatId)
+                                .set(mainChatData)
+                                .addOnSuccessListener(aVoid -> {
+                                    // Now create chat references for both users
+                                    createChatReferences(chatId, currentUserId, friendId, friendName);
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(this, "Error creating chat: " + e.getMessage(),
+                                            Toast.LENGTH_SHORT).show();
+                                    Log.e("CreateChat", "Error creating main chat document", e);
+                                });
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error checking existing chat: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                    Log.e("CreateChat", "Error checking existing chat", e);
                 });
     }
 
-    // Adapter for friends list
-    public class FriendsAdapter extends BaseAdapter {
-        private Context context;
-        private List<PrivateChat> friends;
-        private List<PrivateChat> filteredFriends;
+    private void createChatReferences(String chatId, String currentUserId, String friendId, String friendName) {
+        // Get current user's data
+        db.collection("users")
+                .document(currentUserId)
+                .get()
+                .addOnSuccessListener(currentUserDoc -> {
+                    String currentUsername = currentUserDoc.getString("username");
+                    WriteBatch batch = db.batch();
 
-        public FriendsAdapter(Context context, List<PrivateChat> friends) {
-            this.context = context;
-            this.friends = new ArrayList<>(friends);
-            this.filteredFriends = new ArrayList<>(friends);
-        }
+                    // Current user's chat reference
+                    DocumentReference currentUserChatRef = db.collection("users")
+                            .document(currentUserId)
+                            .collection("chats")
+                            .document(chatId);
 
-        @Override
-        public int getCount() {
-            return filteredFriends.size();
-        }
+                    Map<String, Object> currentUserChat = new HashMap<>();
+                    currentUserChat.put("chatId", chatId);
+                    currentUserChat.put("friendId", friendId);
+                    currentUserChat.put("friendName", friendName);
+                    currentUserChat.put("lastMessage", "");
+                    currentUserChat.put("lastMessageTime", FieldValue.serverTimestamp());
+                    currentUserChat.put("unreadCount", 0);
 
-        @Override
-        public Object getItem(int position) {
-            return filteredFriends.get(position);
-        }
+                    batch.set(currentUserChatRef, currentUserChat);
 
-        @Override
-        public long getItemId(int position) {
-            return position;
-        }
+                    // Friend's chat reference
+                    DocumentReference friendChatRef = db.collection("users")
+                            .document(friendId)
+                            .collection("chats")
+                            .document(chatId);
 
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            if (convertView == null) {
-                convertView = LayoutInflater.from(context).inflate(R.layout.friend_list_item, parent, false);
-            }
+                    Map<String, Object> friendChat = new HashMap<>();
+                    friendChat.put("chatId", chatId);
+                    friendChat.put("friendId", currentUserId);
+                    friendChat.put("friendName", currentUsername);
+                    friendChat.put("lastMessage", "");
+                    friendChat.put("lastMessageTime", FieldValue.serverTimestamp());
+                    friendChat.put("unreadCount", 0);
 
-            TextView friendNameTextView = convertView.findViewById(R.id.friend_name);
-            ImageView friendProfileImageView = convertView.findViewById(R.id.friend_profile_image);
+                    batch.set(friendChatRef, friendChat);
 
-            PrivateChat friend = filteredFriends.get(position);
-            friendNameTextView.setText(friend.getUserName());
+                    // Commit the batch
+                    batch.commit()
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(this, "Chat created successfully",
+                                        Toast.LENGTH_SHORT).show();
+                                navigateToChat(chatId, friendId, friendName);
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(this, "Error creating chat references: " + e.getMessage(),
+                                        Toast.LENGTH_SHORT).show();
+                                Log.e("CreateChat", "Error creating chat references", e);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error getting user data: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                    Log.e("CreateChat", "Error getting user data", e);
+                });
+    }
 
-            // Load profile image using Glide
-            Glide.with(context).load(friend.getProfileImageUrl()).into(friendProfileImageView);
 
-            // Handle friend item click
-            convertView.setOnClickListener(v -> {
-                // Navigate to chat activity
-                startChatActivity(friend);
-            });
-
-            return convertView;
-        }
-
-        // Filter for search
-        public android.widget.Filter getFilter() {
-            return new android.widget.Filter() {
-                @Override
-                protected FilterResults performFiltering(CharSequence constraint) {
-                    List<PrivateChat> filteredList = new ArrayList<>();
-                    if (constraint == null || constraint.length() == 0) {
-                        filteredList.addAll(friends);
-                    } else {
-                        String filterPattern = constraint.toString().toLowerCase().trim();
-                        for (PrivateChat friend : friends) {
-                            if (friend.getUserName().toLowerCase().contains(filterPattern)) {
-                                filteredList.add(friend);
-                            }
-                        }
-                    }
-                    FilterResults results = new FilterResults();
-                    results.values = filteredList;
-                    return results;
-                }
-
-                @Override
-                protected void publishResults(CharSequence constraint, FilterResults results) {
-                    filteredFriends.clear();
-                    filteredFriends.addAll((List<PrivateChat>) results.values);
-                    notifyDataSetChanged();
-                }
-            };
-        }
-
-        private void startChatActivity(PrivateChat friend) {
-            Intent intent = new Intent(context, ChatActivity.class);
-            intent.putExtra("friendId", friend.getUserId());  // Pass necessary data
-            context.startActivity(intent);
-        }
+    private void navigateToChat(String chatId, String friendId, String friendName) {
+        Intent intent = new Intent(this, ChatActivity.class);
+        intent.putExtra("chatId", chatId);
+        intent.putExtra("friendId", friendId);
+        intent.putExtra("friendName", friendName);
+        startActivity(intent);
+        finish();
     }
 }

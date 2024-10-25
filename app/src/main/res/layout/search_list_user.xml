@@ -18,7 +18,7 @@
         android:background="@drawable/rounded_image_view" />
 
     <TextView
-        android:id="@+id/username"
+        android:id="@+id/username_text_view"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
@@ -27,7 +27,7 @@
         android:text="Username" />
 
     <ImageView
-        android:id="@+id/add_user_button"
+        android:id="@+id/add_friend_button"
         android:layout_width="20dp"
         android:layout_height="20dp"
         android:layout_marginStart="16dp"
@@ -35,5 +35,5 @@
         android:src="@drawable/ic_add_user"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:clickable="true"
-        android:focusable="true" />/>
+        android:focusable="true" />
 </LinearLayout>

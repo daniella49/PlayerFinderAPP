@@ -3,6 +3,7 @@ package com.example.playerfinderapp.activities;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
@@ -50,7 +51,7 @@ public class ProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        // Register activity result launcher
+        // Register activity result launcher for EditProfileActivity
         editProfileLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
@@ -67,7 +68,7 @@ public class ProfileActivity extends AppCompatActivity {
         // Get user ID from intent or current user
         userId = getIntent().getStringExtra("USER_ID");
         if (userId == null) {
-            userId = auth.getCurrentUser().getUid();
+            userId = auth.getCurrentUser().getUid(); // This can also be null if user is not logged in
             isOwnProfile = true;
         } else {
             isOwnProfile = userId.equals(auth.getCurrentUser().getUid());
@@ -88,6 +89,7 @@ public class ProfileActivity extends AppCompatActivity {
         favoriteGamesList = findViewById(R.id.favorite_games_list);
         friendsList = findViewById(R.id.friends_list);
 
+
         // Setup RecyclerViews
         favoriteGamesList.setLayoutManager(new LinearLayoutManager(this));
         friendsList.setLayoutManager(new LinearLayoutManager(this));
@@ -95,6 +97,28 @@ public class ProfileActivity extends AppCompatActivity {
         // Show appropriate buttons based on profile type
         settingsButton.setVisibility(isOwnProfile ? View.VISIBLE : View.GONE);
         addFriendButton.setVisibility(isOwnProfile ? View.GONE : View.VISIBLE);
+
+        // Check if already friends
+        if (!isOwnProfile) {
+            checkIfAlreadyFriends();
+        }
+    }
+
+    // Add this new method to check friendship status
+    private void checkIfAlreadyFriends() {
+        String currentUserId = auth.getCurrentUser().getUid();
+
+        db.collection("users").document(currentUserId)
+                .collection("friends")
+                .document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        // Already friends, update UI
+                        addFriendButton.setImageResource(R.drawable.ic_check);
+                        addFriendButton.setEnabled(false);
+                    }
+                });
     }
 
     private void setupButtons() {
@@ -108,17 +132,21 @@ public class ProfileActivity extends AppCompatActivity {
 
         addFriendButton.setOnClickListener(v -> {
             if (!isOwnProfile) {
-                sendFriendRequest();
+                addFriend();
             }
         });
     }
 
     private void loadProfileData() {
+        if (userId == null) {
+            Toast.makeText(this, "User ID is null", Toast.LENGTH_SHORT).show();
+            return; // Exit the method if userId is null
+        }
+
         db.collection("users").document(userId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
-                        // Set user data
                         usernameText.setText(documentSnapshot.getString("username"));
                         bioText.setText(documentSnapshot.getString("bio"));
 
@@ -131,8 +159,16 @@ public class ProfileActivity extends AppCompatActivity {
 
                         // Load friends
                         loadFriends();
+                    } else {
+                        Toast.makeText(this, "User profile does not exist.", Toast.LENGTH_SHORT).show();
                     }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to load profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+
+        // Load friends
+        loadFriends();
     }
 
     private void loadFriends() {
@@ -146,8 +182,11 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                     friendsAdapter = new FriendsAdapter(friendsList, isOwnProfile);
                     this.friendsList.setAdapter(friendsAdapter);
-                });
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to load friends: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
+
 
     private void showSettingsDialog() {
         String[] options = {"Edit Profile", "Log Out", "Delete Account"};
@@ -213,20 +252,74 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-    private void sendFriendRequest() {
+    private void addFriend() {
         String currentUserId = auth.getCurrentUser().getUid();
 
-        // Add to friend requests collection
-        Map<String, Object> request = new HashMap<>();
-        request.put("from", currentUserId);
-        request.put("timestamp", FieldValue.serverTimestamp());
+        // Skip if trying to add self
+        if (currentUserId.equals(userId)) {
+            Toast.makeText(this, "Cannot add yourself as friend", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        db.collection("users").document(userId)
-                .collection("friendRequests").document(currentUserId)
-                .set(request)
-                .addOnSuccessListener(aVoid ->
-                        Toast.makeText(this, "Friend request sent!", Toast.LENGTH_SHORT).show())
+        // Get current user's data first
+        db.collection("users").document(currentUserId)
+                .get()
+                .addOnSuccessListener(currentUserDoc -> {
+                    String currentUsername = currentUserDoc.getString("username");
+
+                    // Create data for friend's list (current user's data)
+                    Map<String, Object> currentUserData = new HashMap<>();
+                    currentUserData.put("uid", currentUserId);
+                    currentUserData.put("username", currentUsername);
+
+                    // Get friend's data
+                    db.collection("users").document(userId)
+                            .get()
+                            .addOnSuccessListener(friendDoc -> {
+                                String friendUsername = friendDoc.getString("username");
+
+                                // Create data for current user's friend list
+                                Map<String, Object> friendData = new HashMap<>();
+                                friendData.put("uid", userId);
+                                friendData.put("username", friendUsername);
+
+                                // Add friend to current user's friends list
+                                db.collection("users").document(currentUserId)
+                                        .collection("friends")
+                                        .document(userId)
+                                        .set(friendData)
+                                        .addOnSuccessListener(aVoid -> {
+                                            // Add current user to friend's friends list
+                                            db.collection("users").document(userId)
+                                                    .collection("friends")
+                                                    .document(currentUserId)
+                                                    .set(currentUserData)
+                                                    .addOnSuccessListener(aVoid2 -> {
+                                                        Toast.makeText(this, "Friend added successfully!", Toast.LENGTH_SHORT).show();
+
+                                                        // Update the UI
+                                                        addFriendButton.setImageResource(R.drawable.ic_check);
+                                                        addFriendButton.setEnabled(false);
+
+                                                        // Refresh friends list
+                                                        loadFriends();
+                                                    })
+                                                    .addOnFailureListener(e ->
+                                                            Toast.makeText(this, "Failed to add to friend's list: " + e.getMessage(),
+                                                                    Toast.LENGTH_SHORT).show());
+                                        })
+                                        .addOnFailureListener(e ->
+                                                Toast.makeText(this, "Failed to add friend: " + e.getMessage(),
+                                                        Toast.LENGTH_SHORT).show());
+                            })
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(this, "Failed to get friend's data: " + e.getMessage(),
+                                            Toast.LENGTH_SHORT).show());
+                })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to send request", Toast.LENGTH_SHORT).show());
+                        Toast.makeText(this, "Failed to get current user's data: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show());
     }
+
+
 }

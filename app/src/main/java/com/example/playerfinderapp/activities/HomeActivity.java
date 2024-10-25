@@ -80,7 +80,6 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void loadPopularGames() {
-        // Example list of popular games
         ArrayList<String> gameNames = new ArrayList<>();
         gameNames.add("ROBLOX");
         gameNames.add("Minecraft");

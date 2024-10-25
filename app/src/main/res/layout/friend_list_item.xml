@@ -23,4 +23,12 @@
         android:text="@string/friend_name"
         android:textSize="16sp"
         android:textColor="@android:color/black" />
+
+    <ImageButton
+        android:id="@+id/remove_friend_button"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/ic_trash2"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:visibility="gone"/>
 </LinearLayout>
